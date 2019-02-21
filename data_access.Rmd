@@ -1,0 +1,79 @@
+---
+title: "AACR GENIE data access"
+author: "Laura Cosgrove"
+date: "2/21/2019"
+output: github_document
+---
+
+## Getting Data
+
+```{r}
+library(tidyverse)
+#install.packages("synapser", repos=c("https://sage-bionetworks.github.io/ran", "http://cran.fhcrc.org"))
+library(synapser)
+```
+
+Put your login info here
+```{r eval=FALSE}
+#synLogin("laura_cosgrove", "")
+```
+
+Download text files
+
+```{r eval=FALSE}
+data_CNA <- synGet("syn17394020", downloadLocation="./data/")
+
+data_clinical_patient <- synGet("syn17394024", downloadLocation="./data/")
+
+data_clinical_sample <- synGet("syn17394030", downloadLocation="./data/")
+
+data_fusions <- synGet("syn17394035", downloadLocation="./data/")
+
+data_guide <- synGet("syn17394098", downloadLocation="./data/")
+
+data_mutations_extended <- synGet("syn17394041", downloadLocation="./data/")
+
+```
+
+Read text files to CSV and save to RData the ones you want to use (bc very big)
+
+```{r eval=FALSE}
+data_CNA <- read.delim("./data/data_CNA_5.0-public.txt")
+
+data_mutations <- read.delim("./data/data_mutations_extended_5.0-public.txt", skip = 1) 
+
+saveRDS(data_mutations, "data_mutations.rds")
+```
+
+## Initial Exploration
+
+Just looked at mutations so far.
+
+```{r}
+data_mutations <- readRDS("data_mutations.rds")
+data_mutations <- data_mutations %>% 
+  as_tibble() 
+
+glimpse(data_mutations)
+
+```
+
+There's one potential response variable - Clinical Significance. Let's examine that more closely:
+
+```{r, fig.height=10, fig.width=12}
+data_mutations %>% 
+  group_by(CLIN_SIG) %>% 
+  summarize(count = n()) %>% 
+  filter(!CLIN_SIG == "") %>% #Count of 404077 dropped
+  mutate(clin_sig = forcats::fct_reorder(CLIN_SIG, count)) %>% 
+  top_n(30) %>% 
+  ggplot(aes(x = clin_sig, y = count)) +
+  geom_col() +
+  geom_text(aes(label = count), hjust = -0.1, size = 3) +
+  coord_flip() + 
+  labs(title = "Clinical Significance of Mutations") +
+  ggthemes::theme_fivethirtyeight()
+
+```
+
+There's a lot of missing data (404,077 obs) and the vast majority of what's remaining is coded either pathogenic or uncertain, and then a lot of multiple-coded values. Maybe not worth looking at this as a response.
