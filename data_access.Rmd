@@ -21,34 +21,41 @@ Put your login info here
 Download text files
 
 ```{r eval=FALSE}
-data_CNA <- synGet("syn17394020", downloadLocation="./data/")
+#data_CNA <- synGet("syn17394020", downloadLocation="./data/")
 
-data_clinical_patient <- synGet("syn17394024", downloadLocation="./data/")
+#data_clinical_patient <- synGet("syn17394024", downloadLocation="./data/")
 
-data_clinical_sample <- synGet("syn17394030", downloadLocation="./data/")
+#data_clinical_sample <- synGet("syn17394030", downloadLocation="./data/")
 
-data_fusions <- synGet("syn17394035", downloadLocation="./data/")
+#data_fusions <- synGet("syn17394035", downloadLocation="./data/")
 
-data_guide <- synGet("syn17394098", downloadLocation="./data/")
+#data_guide <- synGet("syn17394098", downloadLocation="./data/")
 
-data_mutations_extended <- synGet("syn17394041", downloadLocation="./data/")
+#data_mutations_extended <- synGet("syn17394041", downloadLocation="./data/")
 
 ```
 
 Read text files to CSV and save to RData the ones you want to use (bc very big)
 
 ```{r eval=FALSE}
-data_CNA <- read.delim("./data/data_CNA_5.0-public.txt")
+#data_CNA <- read.delim("./data/data_CNA_5.0-public.txt")
 
-data_mutations <- read.delim("./data/data_mutations_extended_5.0-public.txt", skip = 1) 
+#data_mutations <- read.delim("./data/data_mutations_extended_5.0-public.txt", skip = 1) 
 
-saveRDS(data_mutations, "data_mutations.rds")
+#data_clinical_patient <- read.delim("./data/data_clinical_patient_5.0-public.txt", skip = 4) 
+
+#data_clinical_sample <- read.delim("./data/data_clinical_sample_5.0-public.txt",  skip = 4) 
+
+#saveRDS(data_mutations, "data_mutations.rds")
+#saveRDS(data_CNA, "data_CNA.rds")
+#saveRDS(data_clinical_patient, "data_clinical_patient.rds")
+#saveRDS(data_clinical_sample, "data_clinical_sample.rds")
+
 ```
 
 ## Initial Exploration
 
-Just looked at mutations so far.
-
+### Mutations dataset
 ```{r}
 data_mutations <- readRDS("data_mutations.rds")
 data_mutations <- data_mutations %>% 
@@ -58,7 +65,7 @@ glimpse(data_mutations)
 
 ```
 
-There's one potential response variable - Clinical Significance. Let's examine that more closely:
+There's a potential response variable - Clinical Significance. Let's examine that more closely:
 
 ```{r, fig.height=10, fig.width=12}
 data_mutations %>% 
@@ -76,4 +83,88 @@ data_mutations %>%
 
 ```
 
-There's a lot of missing data (404,077 obs) and the vast majority of what's remaining is coded either pathogenic or uncertain, and then a lot of multiple-coded values. Maybe not worth looking at this as a response.
+There's a lot of missing data (404,077 obs) and the vast majority of what's remaining is coded either pathogenic or uncertain, and then a lot of multiple-coded values. Maybe not worth looking at this as a response, but rather simply subsetting on pathogenic mutations.
+
+```{r}
+data_mutations %>% 
+  distinct(VARIANT_CLASS)
+```
+
+There's a few variant classes of mutations. 
+
+### CNA dataset
+
+```{r}
+data_CNA <- readRDS("data_CNA.rds")
+
+ data_CNA %>% 
+  as_tibble() %>% 
+  drop_na() %>% 
+  select(GENIE.DFCI.009135.6818:GENIE.DFCI.009016.6436)  %>% # Just a random selection so easier to see 
+  skimr::skim()
+ 
+#These data take values from -2 to 2.
+   
+data_CNA %>% 
+  as_tibble() %>% 
+  distinct(Hugo_Symbol)
+ 
+data_CNA %>% 
+  as_tibble() %>% 
+  drop_na() %>% 
+  distinct(Hugo_Symbol) #only 44 genes with complete contributing
+
+
+```
+
+Only a subset of centers submitted CNA panels. I believe the format is, broadly, GENIE."CENTER ABBREV"."PATIENT"."POSITION ON GENOME/SUBTYPE OF GENE". The data take values from -2 to 2, which, consistent with as described in the BYU student's paper, represents under-to-overexpression. 
+
+### Clinical Patient Dataset
+
+```{r}
+data_clinical_patient <- readRDS("data_clinical_patient.rds")
+
+data_clinical_patient <- data_clinical_patient %>% 
+  as_tibble() %>% 
+  janitor::clean_names()
+
+data_clinical_patient %>% 
+  skimr::skim()
+```
+
+Contains patient id, sex, race, ethnicity, and center.
+
+###Clinical Sample Dataset
+
+```{r, fig.height=10, fig.width=12}
+data_clinical_sample <- readRDS("data_clinical_sample.rds")
+
+data_clinical_sample <- data_clinical_sample %>% 
+  as_tibble() %>% 
+  janitor::clean_names()
+
+data_clinical_sample %>% distinct(cancer_type)
+
+data_clinical_sample %>% 
+  left_join(data_clinical_patient, by = "patient_id") %>% 
+  group_by(cancer_type) %>% 
+  summarize(count = n()) %>% 
+  top_n(n = 25, wt = count) %>% 
+  arrange(desc(count)) %>% 
+  knitr::kable()
+
+data_clinical_sample %>% 
+  left_join(data_clinical_patient, by = "patient_id") %>% 
+  group_by(cancer_type) %>% 
+  summarize(count = n()) %>% ungroup() %>% 
+  mutate(cancer_type = forcats::fct_reorder(cancer_type, count)) %>% 
+  ggplot(aes(x = cancer_type, y = count)) +
+  geom_col() +
+  theme(text = element_text(size  = 8)) +
+  geom_text(aes(label = count), hjust = -0.1, size = 2) +
+  coord_flip()
+
+
+```
+
+"Primary cancer diagnosis is reported using the OncoTree cancer type ontology, initially developed at MSK, which also provides mappings to other widely used cancer type taxonomies, including SNOMED and ICD-9/10 codes"

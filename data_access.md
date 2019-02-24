@@ -10,14 +10,14 @@ Getting Data
 library(tidyverse)
 ```
 
-    ## ── Attaching packages ─────────────────────────────────────────────────────────────────── tidyverse 1.2.1 ──
+    ## ── Attaching packages ─────────────────────────────────────────────────────── tidyverse 1.2.1 ──
 
     ## ✔ ggplot2 3.1.0     ✔ purrr   0.2.5
     ## ✔ tibble  1.4.2     ✔ dplyr   0.7.8
     ## ✔ tidyr   0.8.2     ✔ stringr 1.3.1
     ## ✔ readr   1.1.1     ✔ forcats 0.3.0
 
-    ## ── Conflicts ────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ── Conflicts ────────────────────────────────────────────────────────── tidyverse_conflicts() ──
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
 
@@ -43,33 +43,40 @@ Put your login info here
 Download text files
 
 ``` r
-data_CNA <- synGet("syn17394020", downloadLocation="./data/")
+#data_CNA <- synGet("syn17394020", downloadLocation="./data/")
 
-data_clinical_patient <- synGet("syn17394024", downloadLocation="./data/")
+#data_clinical_patient <- synGet("syn17394024", downloadLocation="./data/")
 
-data_clinical_sample <- synGet("syn17394030", downloadLocation="./data/")
+#data_clinical_sample <- synGet("syn17394030", downloadLocation="./data/")
 
-data_fusions <- synGet("syn17394035", downloadLocation="./data/")
+#data_fusions <- synGet("syn17394035", downloadLocation="./data/")
 
-data_guide <- synGet("syn17394098", downloadLocation="./data/")
+#data_guide <- synGet("syn17394098", downloadLocation="./data/")
 
-data_mutations_extended <- synGet("syn17394041", downloadLocation="./data/")
+#data_mutations_extended <- synGet("syn17394041", downloadLocation="./data/")
 ```
 
 Read text files to CSV and save to RData the ones you want to use (bc very big)
 
 ``` r
-data_CNA <- read.delim("./data/data_CNA_5.0-public.txt")
+#data_CNA <- read.delim("./data/data_CNA_5.0-public.txt")
 
-data_mutations <- read.delim("./data/data_mutations_extended_5.0-public.txt", skip = 1) 
+#data_mutations <- read.delim("./data/data_mutations_extended_5.0-public.txt", skip = 1) 
 
-saveRDS(data_mutations, "data_mutations.rds")
+#data_clinical_patient <- read.delim("./data/data_clinical_patient_5.0-public.txt", skip = 4) 
+
+#data_clinical_sample <- read.delim("./data/data_clinical_sample_5.0-public.txt",  skip = 4) 
+
+#saveRDS(data_mutations, "data_mutations.rds")
+#saveRDS(data_CNA, "data_CNA.rds")
+#saveRDS(data_clinical_patient, "data_clinical_patient.rds")
+#saveRDS(data_clinical_sample, "data_clinical_sample.rds")
 ```
 
 Initial Exploration
 -------------------
 
-Just looked at mutations so far.
+### Mutations dataset
 
 ``` r
 data_mutations <- readRDS("data_mutations.rds")
@@ -205,7 +212,7 @@ glimpse(data_mutations)
     ## $ ExAC_AC_AN_SAS                <fct> , , , , , , , , , , , , 0/15920,...
     ## $ ExAC_FILTER                   <fct> , , , , , , , , , , , , PASS, , ...
 
-There's one potential response variable - Clinical Significance. Let's examine that more closely:
+There's a potential response variable - Clinical Significance. Let's examine that more closely:
 
 ``` r
 data_mutations %>% 
@@ -226,4 +233,311 @@ data_mutations %>%
 
 ![](data_access_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
-There's a lot of missing data (404,077 obs) and the vast majority of what's remaining is coded either pathogenic or uncertain, and then a lot of multiple-coded values. Maybe not worth looking at this as a response.
+There's a lot of missing data (404,077 obs) and the vast majority of what's remaining is coded either pathogenic or uncertain, and then a lot of multiple-coded values. Maybe not worth looking at this as a response, but rather simply subsetting on pathogenic mutations.
+
+``` r
+data_mutations %>% 
+  distinct(VARIANT_CLASS)
+```
+
+    ## # A tibble: 8 x 1
+    ##   VARIANT_CLASS      
+    ##   <fct>              
+    ## 1 SNV                
+    ## 2 deletion           
+    ## 3 insertion          
+    ## 4 substitution       
+    ## 5 indel              
+    ## 6 sequence_alteration
+    ## 7 RPL                
+    ## 8 DUP:TANDEM
+
+There's a few variant classes of mutations.
+
+### CNA dataset
+
+``` r
+data_CNA <- readRDS("data_CNA.rds")
+
+ data_CNA %>% 
+  as_tibble() %>% 
+  drop_na() %>% 
+  select(GENIE.DFCI.009135.6818:GENIE.DFCI.009016.6436)  %>% # Just a random selection so easier to see 
+  skimr::skim()
+```
+
+    ## Skim summary statistics
+    ##  n obs: 54 
+    ##  n variables: 53 
+    ## 
+    ## ── Variable type:integer ───────────────────────────────────────────────────────────────────────
+    ##                variable missing complete  n   mean   sd p0 p25 p50 p75
+    ##  GENIE.DFCI.000059.6433       0       54 54  0.037 0.33 -1   0   0   0
+    ##  GENIE.DFCI.000370.6608       0       54 54 -0.17  0.64 -1  -1   0   0
+    ##  GENIE.DFCI.000733.6707       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.000741.6740       0       54 54  0.037 0.27 -1   0   0   0
+    ##  GENIE.DFCI.001433.1105       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.001591.6626       0       54 54 -0.17  0.64 -1  -1   0   0
+    ##  GENIE.DFCI.001657.6646       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.002275.1103       0       54 54  0.056 0.56 -1   0   0   0
+    ##  GENIE.DFCI.002365.6793       0       54 54 -0.11  0.42 -2   0   0   0
+    ##  GENIE.DFCI.002904.6699       0       54 54  0.019 0.41 -1   0   0   0
+    ##  GENIE.DFCI.003233.6749       0       54 54  0.019 0.14  0   0   0   0
+    ##  GENIE.DFCI.003442.6619       0       54 54  0.13  0.75 -2   0   0   1
+    ##  GENIE.DFCI.003562.1102       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.003764.6688       0       54 54  0.11  0.32  0   0   0   0
+    ##  GENIE.DFCI.004241.6625       0       54 54  0.037 0.67 -1   0   0   0
+    ##  GENIE.DFCI.004252.6566       0       54 54 -0.056 0.3  -1   0   0   0
+    ##  GENIE.DFCI.005022.1116       0       54 54 -0.15  0.49 -2   0   0   0
+    ##  GENIE.DFCI.005217.6702       0       54 54 -0.074 0.26 -1   0   0   0
+    ##  GENIE.DFCI.005412.6766       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.005447.6795       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.006624.6745       0       54 54 -0.019 0.14 -1   0   0   0
+    ##  GENIE.DFCI.007919.6769       0       54 54  0.056 0.71 -1   0   0   0
+    ##  GENIE.DFCI.008017.6742       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.008375.6423       0       54 54 -0.11  0.32 -1   0   0   0
+    ##  GENIE.DFCI.008398.6691       0       54 54 -0.15  0.63 -1  -1   0   0
+    ##  GENIE.DFCI.008536.6580       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009016.6436       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009070.6633       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009081.6592       0       54 54 -0.093 0.49 -1   0   0   0
+    ##  GENIE.DFCI.009096.6726       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009106.6785       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009124.6747       0       54 54 -0.056 0.23 -1   0   0   0
+    ##  GENIE.DFCI.009133.6649       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009135.6818       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009166.6767       0       54 54  0     0.34 -1   0   0   0
+    ##  GENIE.DFCI.009177.6604       0       54 54 -0.074 0.26 -1   0   0   0
+    ##  GENIE.DFCI.009202.6640       0       54 54  0.074 0.38 -1   0   0   0
+    ##  GENIE.DFCI.009208.6657       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009215.6627       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009217.6670       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009231.6733       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009244.6764       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009258.6581       0       54 54 -0.13  0.48 -1   0   0   0
+    ##  GENIE.DFCI.009260.6409       0       54 54  0.037 0.61 -2   0   0   0
+    ##  GENIE.DFCI.009261.6703       0       54 54 -0.093 0.45 -1   0   0   0
+    ##  GENIE.DFCI.009264.6686       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009277.6754       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009279.6681       0       54 54  0     0.19 -1   0   0   0
+    ##  GENIE.DFCI.009292.6729       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009297.6390       0       54 54  0     0     0   0   0   0
+    ##  GENIE.DFCI.009312.6572       0       54 54 -0.13  0.34 -1   0   0   0
+    ##  GENIE.DFCI.009317.6585       0       54 54 -0.11  0.42 -2   0   0   0
+    ##  GENIE.DFCI.009357.6382       0       54 54  0     0     0   0   0   0
+    ##  p100     hist
+    ##     2 ▁▁▇▁▁▁▁▁
+    ##     1 ▅▁▁▇▁▁▁▂
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▅▁▁▇▁▁▁▂
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▂▁▁▇▁▁▁▂
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     1 ▁▁▁▇▁▁▁▁
+    ##     1 ▇▁▁▁▁▁▁▁
+    ##     1 ▁▁▃▁▁▇▁▆
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▇▁▁▁▁▁▁▁
+    ##     1 ▃▁▁▇▁▁▁▃
+    ##     1 ▁▁▁▇▁▁▁▁
+    ##     1 ▁▁▂▁▁▇▁▁
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     2 ▃▁▇▁▁▃▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     1 ▃▁▁▇▁▁▁▂
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▂▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     2 ▁▁▇▁▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▂▁▁▇▁▁▁▁
+    ##     1 ▁▁▁▁▁▇▁▂
+    ##     2 ▁▁▇▁▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     1 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+    ##     0 ▁▁▁▁▁▁▁▇
+    ##     1 ▁▁▁▁▁▇▁▁
+    ##     0 ▁▁▁▇▁▁▁▁
+
+``` r
+#These data take values from -2 to 2.
+   
+data_CNA %>% 
+  as_tibble() %>% 
+  distinct(Hugo_Symbol)
+```
+
+    ## # A tibble: 842 x 1
+    ##    Hugo_Symbol
+    ##    <fct>      
+    ##  1 ABCB11     
+    ##  2 ABL1       
+    ##  3 ABL2       
+    ##  4 ACTB       
+    ##  5 ACVR1      
+    ##  6 ACVR1B     
+    ##  7 ACVRL1     
+    ##  8 AFF2       
+    ##  9 AGMO       
+    ## 10 AGO2       
+    ## # ... with 832 more rows
+
+``` r
+data_CNA %>% 
+  as_tibble() %>% 
+  drop_na() %>% 
+  distinct(Hugo_Symbol) #only 44 genes with complete contributing
+```
+
+    ## # A tibble: 54 x 1
+    ##    Hugo_Symbol
+    ##    <fct>      
+    ##  1 AKT1       
+    ##  2 AKT2       
+    ##  3 ALK        
+    ##  4 APC        
+    ##  5 ARID1B     
+    ##  6 ARID2      
+    ##  7 ASXL1      
+    ##  8 ATR        
+    ##  9 BAP1       
+    ## 10 BRAF       
+    ## # ... with 44 more rows
+
+Only a subset of centers submitted CNA panels. I believe the format is, broadly, GENIE."CENTER ABBREV"."PATIENT"."POSITION ON GENOME/SUBTYPE OF GENE". The data take values from -2 to 2, which, consistent with as described in the BYU student's paper, represents under-to-overexpression.
+
+### Clinical Patient Dataset
+
+``` r
+data_clinical_patient <- readRDS("data_clinical_patient.rds")
+
+data_clinical_patient <- data_clinical_patient %>% 
+  as_tibble() %>% 
+  janitor::clean_names()
+
+data_clinical_patient %>% 
+  skimr::skim()
+```
+
+    ## Skim summary statistics
+    ##  n obs: 56970 
+    ##  n variables: 5 
+    ## 
+    ## ── Variable type:factor ────────────────────────────────────────────────────────────────────────
+    ##      variable missing complete     n n_unique
+    ##        center       0    56970 56970       11
+    ##     ethnicity       0    56970 56970        3
+    ##    patient_id       0    56970 56970    56970
+    ##  primary_race       0    56970 56970        7
+    ##           sex       0    56970 56970        3
+    ##                                    top_counts ordered
+    ##  MSK: 21688, DFC: 16803, JHU: 3972, MDA: 3857   FALSE
+    ##      Non: 41710, Unk: 13304, Spa: 1956, NA: 0   FALSE
+    ##                GEN: 1, GEN: 1, GEN: 1, GEN: 1   FALSE
+    ##   Whi: 41808, Unk: 8619, Bla: 2984, Asi: 2403   FALSE
+    ##        Fem: 31605, Mal: 25348, Unk: 17, NA: 0   FALSE
+
+Contains patient id, sex, race, ethnicity, and center.
+
+### Clinical Sample Dataset
+
+``` r
+data_clinical_sample <- readRDS("data_clinical_sample.rds")
+
+data_clinical_sample <- data_clinical_sample %>% 
+  as_tibble() %>% 
+  janitor::clean_names()
+
+data_clinical_sample %>% distinct(cancer_type)
+```
+
+    ## # A tibble: 81 x 1
+    ##    cancer_type               
+    ##    <fct>                     
+    ##  1 Appendiceal Cancer        
+    ##  2 Colorectal Cancer         
+    ##  3 Cancer of Unknown Primary 
+    ##  4 Non-Small Cell Lung Cancer
+    ##  5 Breast Cancer             
+    ##  6 Pancreatic Cancer         
+    ##  7 Leukemia                  
+    ##  8 Melanoma                  
+    ##  9 Salivary Gland Cancer     
+    ## 10 Endometrial Cancer        
+    ## # ... with 71 more rows
+
+``` r
+data_clinical_sample %>% 
+  left_join(data_clinical_patient, by = "patient_id") %>% 
+  group_by(cancer_type) %>% 
+  summarize(count = n()) %>% 
+  top_n(n = 25, wt = count) %>% 
+  arrange(desc(count)) %>% 
+  knitr::kable()
+```
+
+| cancer\_type                   |  count|
+|:-------------------------------|------:|
+| Non-Small Cell Lung Cancer     |   9090|
+| Breast Cancer                  |   8712|
+| Colorectal Cancer              |   5961|
+| Glioma                         |   3214|
+| Melanoma                       |   2492|
+| Prostate Cancer                |   2214|
+| Pancreatic Cancer              |   2062|
+| Ovarian Cancer                 |   2052|
+| Leukemia                       |   1882|
+| Soft Tissue Sarcoma            |   1733|
+| Cancer of Unknown Primary      |   1709|
+| Endometrial Cancer             |   1668|
+| Esophagogastric Cancer         |   1567|
+| Bladder Cancer                 |   1467|
+| Renal Cell Carcinoma           |   1260|
+| Hepatobiliary Cancer           |   1227|
+| Head and Neck Cancer           |   1110|
+| Thyroid Cancer                 |    910|
+| Non-Hodgkin Lymphoma           |    646|
+| Germ Cell Tumor                |    623|
+| Gastrointestinal Stromal Tumor |    586|
+| Salivary Gland Cancer          |    499|
+| Bone Cancer                    |    488|
+| Skin Cancer, Non-Melanoma      |    467|
+| Mesothelioma                   |    450|
+
+``` r
+data_clinical_sample %>% 
+  left_join(data_clinical_patient, by = "patient_id") %>% 
+  group_by(cancer_type) %>% 
+  summarize(count = n()) %>% ungroup() %>% 
+  mutate(cancer_type = forcats::fct_reorder(cancer_type, count)) %>% 
+  ggplot(aes(x = cancer_type, y = count)) +
+  geom_col() +
+  theme(text = element_text(size  = 8)) +
+  geom_text(aes(label = count), hjust = -0.1, size = 2) +
+  coord_flip()
+```
+
+![](data_access_files/figure-markdown_github/unnamed-chunk-10-1.png)
+
+"Primary cancer diagnosis is reported using the OncoTree cancer type ontology, initially developed at MSK, which also provides mappings to other widely used cancer type taxonomies, including SNOMED and ICD-9/10 codes"
