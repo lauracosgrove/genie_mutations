@@ -262,7 +262,7 @@ data_CNA <- readRDS("data_CNA.rds")
  data_CNA %>% 
   as_tibble() %>% 
   drop_na() %>% 
-  select(GENIE.DFCI.009135.6818:GENIE.DFCI.009016.6436)  %>% # Just a random selection so easier to see 
+  select(GENIE.DFCI.009135.6818:GENIE.DFCI.009016.6436)  %>% # Just a random selection of samples so easier to see 
   skimr::skim()
 ```
 
@@ -407,7 +407,7 @@ data_CNA %>%
 data_CNA %>% 
   as_tibble() %>% 
   drop_na() %>% 
-  distinct(Hugo_Symbol) #only 44 genes with complete contributing
+  distinct(Hugo_Symbol) #only 44 genes with all samples contributing?
 ```
 
     ## # A tibble: 54 x 1
@@ -425,7 +425,7 @@ data_CNA %>%
     ## 10 BRAF       
     ## # ... with 44 more rows
 
-Only a subset of centers submitted CNA panels. I believe the format is, broadly, GENIE."CENTER ABBREV"."PATIENT"."POSITION ON GENOME/SUBTYPE OF GENE". The data take values from -2 to 2, which, consistent with as described in the BYU student's paper, represents under-to-overexpression.
+Only a subset of centers submitted CNA panels. I believe the format is, broadly, GENIE."CENTER ABBREV"."PATIENT"."SAMPLE". The data take values from -2 to 2, which, consistent with as described in the BYU student's paper, represents under-to-overexpression. These data should be transposed to be tidy and can be joined with the clinical sample dataset.
 
 ### Clinical Patient Dataset
 
